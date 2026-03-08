@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>羽球單打比賽安排助手</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #4f46e5;
+        --primary-dark: #4338ca;
+        --accent: #10b981;
+        --bg-dark: #0f172a;
+        --card-bg: #1e293b;
+        --text-main: #f8fafc;
+        --text-dim: #94a3b8;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --not-arrived: #64748b;
+        --arrived: #10b981;
+        --left: #94a3b8;
+        --playing: #f59e0b;
+        --radius-lg: 1rem;
+        --radius-md: 0.75rem;
+        --shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family: "Outfit", sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        line-height: 1.5;
+        padding-bottom: 2rem;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+
+      /* Typography */
+      h1,
+      h2,
+      h3 {
+        font-weight: 700;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        color: var(--text-main);
+      }
+      h2 {
+        font-size: 1.25rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--primary);
+        padding-left: 0.75rem;
+      }
+
+      /* UI Elements */
+      .card {
+        background-color: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        font-size: 1rem;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+      }
+      .btn-primary:active {
+        transform: scale(0.98);
+        background-color: var(--primary-dark);
+      }
+
+      .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--text-main);
+      }
+      .btn-secondary:active {
+        background-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .btn-sm {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.875rem;
+        width: auto;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-md);
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      input:focus {
+        outline: 2px solid var(--primary);
+        border-color: transparent;
+      }
+
+      /* Badges */
+      .badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .status-not-arrived {
+        background-color: rgba(100, 116, 139, 0.2);
+        color: #cbd5e1;
+      }
+      .status-arrived {
+        background-color: rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+      }
+      .status-left {
+        background-color: rgba(148, 163, 184, 0.2);
+        color: #cbd5e1;
+      }
+
+      /* Layout Grid */
+      .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+      }
+      .stat-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.75rem;
+        border-radius: var(--radius-md);
+      }
+      .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        display: block;
+      }
+      .stat-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      /* Lists */
+      .player-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .player-item:last-child {
+        border-bottom: none;
+      }
+
+      /* Match specific */
+      .match-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .match-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--primary);
+      }
+      .match-card.playing::before {
+        background: var(--warning);
+      }
+      .match-card.finished::before {
+        background: var(--accent);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Nav */
+      .tab-nav {
+        display: flex;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: var(--radius-md);
+        padding: 0.25rem;
+        margin-bottom: 1.5rem;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 0.6rem;
+        text-align: center;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tab-btn.active {
+        background: var(--primary);
+        color: white;
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 0.75rem;
+        }
+        h1 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header style="margin-bottom: 2rem">
+        <h1>羽球單打</h1>
+        <p
+          style="
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+          "
+        >
+          比賽安排與數據助手
+        </p>
+      </header>
+
+      <nav class="tab-nav">
+        <div class="tab-btn active" onclick="switchTab('players')">球員</div>
+        <div class="tab-btn" onclick="switchTab('match')">比賽</div>
+        <div class="tab-btn" onclick="switchTab('history')">歷史紀錄</div>
+      </nav>
+
+      <!-- Players Section -->
+      <section id="section-players">
+        <div class="card">
+          <h3 style="margin-bottom: 1rem">新增球員</h3>
+          <div style="display: flex; gap: 0.5rem">
+            <input
+              type="text"
+              id="player-name-input"
+              placeholder="請輸入球員姓名"
+              style="margin-bottom: 0"
+            />
+            <button class="btn btn-primary btn-sm" onclick="addPlayer()">
+              新增
+            </button>
+          </div>
+        </div>
+
+        <div id="players-list-container">
+          <!-- 球員列表將顯示在此 -->
+        </div>
+      </section>
+
+      <!-- Match Arrangement Section -->
+      <section id="section-match" class="hidden">
+        <div id="arrange-match-step-1" class="card">
+          <h2>選擇球員 A</h2>
+          <div id="select-player-a-list">
+            <!-- 可選球員將顯示在此 -->
+          </div>
+        </div>
+
+        <div id="arrange-match-step-2" class="card hidden">
+          <div class="flex-between">
+            <h2>選擇對手</h2>
+            <button
+              class="btn btn-secondary btn-sm"
+              onclick="resetMatchSelection()"
+            >
+              返回
+            </button>
+          </div>
+          <div
+            id="player-a-display"
+            style="margin-bottom: 1rem; color: var(--primary); font-weight: 600"
+          ></div>
+          <div id="select-player-b-list">
+            <!-- 推薦對手將按優先級顯示在此 -->
+          </div>
+        </div>
+
+        <div id="current-matches-container">
+          <h2>即時比賽</h2>
+          <div id="live-matches-list">
+            <!-- 目前進行中的比賽 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- History Section -->
+      <section id="section-history" class="hidden">
+        <h2>歷史紀錄</h2>
+        <div id="match-history-list">
+          <!-- 已完成的比賽 -->
+        </div>
+        <div
+          class="card"
+          style="margin-top: 2rem; border-color: rgba(239, 68, 68, 0.2)"
+        >
+          <h3 style="color: var(--danger); margin-bottom: 1rem">危險區域</h3>
+          <button
+            class="btn btn-secondary"
+            style="
+              color: var(--danger);
+              outline: 1px solid rgba(239, 68, 68, 0.3);
+            "
+            onclick="confirmResetData()"
+          >
+            重置所有數據
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-top: 1rem">
+            <button class="btn btn-secondary btn-sm" onclick="exportData()">
+              匯出 JSON
+            </button>
+            <label class="btn btn-secondary btn-sm" style="margin-bottom: 0">
+              匯入 JSON
+              <input
+                type="file"
+                id="import-json-input"
+                class="hidden"
+                onchange="importData(event)"
+              />
+            </label>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // Data Structures & Initial state
+      let players = JSON.parse(localStorage.getItem("badminton_players")) || [];
+      let matches = JSON.parse(localStorage.getItem("badminton_matches")) || [];
+      let currentPlayerA = null;
+      let editingMatchId = null;
+
+      // --- Core Functions ---
+      function saveData() {
+        localStorage.setItem("badminton_players", JSON.stringify(players));
+        localStorage.setItem("badminton_matches", JSON.stringify(matches));
+        renderAll();
+      }
+
+      function switchTab(tab) {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((btn) => {
+            btn.classList.remove("active");
+            if (btn.getAttribute('onclick').includes(`'${tab}'`)) {
+              btn.classList.add("active");
+            }
+          });
+        document
+          .querySelectorAll("section")
+          .forEach((sec) => sec.classList.add("hidden"));
+
+        document.getElementById(`section-${tab}`).classList.remove("hidden");
+        renderAll();
+      }
+
+      // --- Player Management ---
+      function addPlayer() {
+        const nameInput = document.getElementById("player-name-input");
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        const player = {
+          id: crypto.randomUUID(),
+          name: name,
+          status: "已到",
+          wins: 0,
+          losses: 0,
+          matchesPlayed: 0,
+          lastPlayedTime: null,
+          opponents: [],
+        };
+
+        players.push(player);
+        nameInput.value = "";
+        saveData();
+      }
+
+      function togglePlayerStatus(id) {
+        const player = players.find((p) => p.id === id);
+        if (!player) return;
+
+        const states = ["未到", "已到", "已離開"];
+        const currentIndex = states.indexOf(player.status);
+        player.status = states[(currentIndex + 1) % states.length];
+        saveData();
+      }
+
+      function getRestTime(player) {
+        if (player.status === "已到" && player.matchesPlayed === 0)
+          return Infinity;
+        if (!player.lastPlayedTime) return Infinity;
+        return Date.now() - player.lastPlayedTime;
+      }
+
+      function formatRestTime(ms) {
+        if (ms === Infinity) return "可上場";
+        const mins = Math.floor(ms / 60000);
+        if (mins < 1) return "剛結束";
+        if (mins >= 60)
+          return Math.floor(mins / 60) + " 小時 " + (mins % 60) + " 分鐘";
+        return `已休息 ${mins} 分鐘`;
+      }
+
+      // --- UI Rendering ---
+      function renderAll() {
+        renderPlayers();
+        renderMatchArrangement();
+        renderLiveMatches();
+        renderHistory();
+      }
+
+      function renderPlayers() {
+        const container = document.getElementById("players-list-container");
+        if (!container) return;
+
+        if (players.length === 0) {
+          container.innerHTML =
+            '<p style="text-align: center; color: var(--text-dim); padding: 2rem;">目前尚未新增球員。</p>';
+          return;
+        }
+
+        container.innerHTML = players
+          .map((p) => {
+            // Derive opponent records from match history
+            const finishedMatches = matches.filter(
+              (m) =>
+                m.status === "Finished" &&
+                (m.playerAId === p.id || m.playerBId === p.id),
+            );
+
+            const wonAgainst = [];
+            const lostTo = [];
+
+            finishedMatches.forEach((m) => {
+              const isPlayerA = m.playerAId === p.id;
+              const opponentName = isPlayerA ? m.playerBName : m.playerAName;
+
+              if (m.winnerId === p.id) {
+                if (!wonAgainst.includes(opponentName))
+                  wonAgainst.push(opponentName);
+              } else {
+                if (!lostTo.includes(opponentName)) lostTo.push(opponentName);
+              }
+            });
+
+            return `
+                <div class="card player-card">
+                    <div class="flex-between">
+                        <div>
+                            <span style="font-weight: 700; font-size: 1.1rem;">${p.name}</span>
+                            <div style="margin-top: 0.25rem;">
+                                <span class="badge status-${p.status === "未到" ? "not-arrived" : p.status === "已到" ? "arrived" : "left"}">${p.status}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="togglePlayerStatus('${p.id}')">狀態</button>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">勝場</span>
+                            <span class="stat-value">${p.wins} ${wonAgainst.length > 0 ? `<small style="font-weight: 400; font-size: 0.75rem; color: var(--text-dim); display: block;">vs ${wonAgainst.join(", ")}</small>` : ""}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">敗場</span>
+                            <span class="stat-value">${p.losses} ${lostTo.length > 0 ? `<small style="font-weight: 400; font-size: 0.75rem; color: var(--text-dim); display: block;">vs ${lostTo.join(", ")}</small>` : ""}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.75rem; background: rgba(0, 0, 0, 0.2); padding: 0.75rem; border-radius: var(--radius-md);">
+                        <span class="stat-label">休息時間</span>
+                        <span class="stat-value" style="font-size: 0.9rem;">${formatRestTime(getRestTime(p))}</span>
+                    </div>
+                </div>
+            `;
+          })
+          .join("");
+      }
+
+      // --- Match Arrangement Logic ---
+      function selectPlayerA(id) {
+        currentPlayerA = players.find((p) => p.id === id);
+        document.getElementById("arrange-match-step-1").classList.add("hidden");
+        document.getElementById("arrange-match-step-2").classList.remove("hidden");
+        document.getElementById("player-a-display").innerText =
+          `球員 A：${currentPlayerA.name}`;
+        renderMatchArrangement();
+      }
+
+      function resetMatchSelection() {
+        currentPlayerA = null;
+        document.getElementById("arrange-match-step-1").classList.remove("hidden");
+        document.getElementById("arrange-match-step-2").classList.add("hidden");
+        renderMatchArrangement();
+      }
+
+      function createMatch(playerBId) {
+        const playerB = players.find((p) => p.id === playerBId);
+        
+        // Safety Validation
+        const activeMatches = matches.filter(m => m.status === 'Arranged' || m.status === 'Playing');
+        const busyPlayerIds = activeMatches.flatMap(m => [m.playerAId, m.playerBId]);
+        
+        const isPlayerABusy = busyPlayerIds.includes(currentPlayerA.id);
+        const isPlayerBBusy = busyPlayerIds.includes(playerB.id);
+        const hasPlayedBefore = matches.some(m => 
+          m.status === 'Finished' && 
+          ((m.playerAId === currentPlayerA.id && m.playerBId === playerB.id) || 
+           (m.playerAId === playerB.id && m.playerBId === currentPlayerA.id))
+        );
+
+        if (currentPlayerA.status !== '已到' || playerB.status !== '已到') {
+          alert("兩位球員皆必須為 '已到' 狀態！");
+          return;
+        }
+
+        if (isPlayerABusy || isPlayerBBusy) {
+          alert("其中一位球員正在比賽中或已安排比賽！");
+          return;
+        }
+
+        if (hasPlayedBefore) {
+          alert("這兩位球員已經對戰過，不能再次安排！");
+          return;
+        }
+
+        const match = {
+          id: crypto.randomUUID(),
+          playerAId: currentPlayerA.id,
+          playerBId: playerB.id,
+          playerAName: currentPlayerA.name,
+          playerBName: playerB.name,
+          winnerId: null,
+          status: "Arranged",
+          createdTime: Date.now(),
+          finishedTime: null,
+        };
+
+        matches.push(match);
+        resetMatchSelection();
+        saveData();
+      }
+
+      function updateMatchStatus(matchId, newStatus) {
+        const match = matches.find((m) => m.id === matchId);
+        if (!match) return;
+
+        match.status = newStatus;
+        saveData();
+      }
+
+      function cancelMatch(matchId) {
+        matches = matches.filter((m) => m.id !== matchId);
+        saveData();
+      }
+
+      function finishMatch(matchId, winnerId) {
+        const match = matches.find((m) => m.id === matchId);
+        if (!match) return;
+
+        const scoreA =
+          parseInt(document.getElementById(`score-a-${matchId}`).value) || 0;
+        const scoreB =
+          parseInt(document.getElementById(`score-b-${matchId}`).value) || 0;
+
+        match.status = "Finished";
+        match.winnerId = winnerId;
+        match.finishedTime = Date.now();
+        match.scoreA = scoreA;
+        match.scoreB = scoreB;
+
+        applyMatchStats(match);
+        saveData();
+      }
+
+      function applyMatchStats(match) {
+        const winner = players.find((p) => p.id === match.winnerId);
+        const loserId =
+          match.winnerId === match.playerAId ? match.playerBId : match.playerAId;
+        const loser = players.find((p) => p.id === loserId);
+
+        if (winner) {
+          winner.wins++;
+          winner.matchesPlayed++;
+          winner.lastPlayedTime = Math.max(winner.lastPlayedTime || 0, match.finishedTime);
+          if (!winner.opponents.includes(loserId)) winner.opponents.push(loserId);
+        }
+
+        if (loser) {
+          loser.losses++;
+          loser.matchesPlayed++;
+          loser.lastPlayedTime = Math.max(loser.lastPlayedTime || 0, match.finishedTime);
+          if (!loser.opponents.includes(match.winnerId)) loser.opponents.push(match.winnerId);
+        }
+      }
+
+      function revertMatchStats(match) {
+        if (match.status !== "Finished") return;
+
+        const winner = players.find((p) => p.id === match.winnerId);
+        const loserId =
+          match.winnerId === match.playerAId ? match.playerBId : match.playerAId;
+        const loser = players.find((p) => p.id === loserId);
+
+        if (winner) {
+          winner.wins = Math.max(0, winner.wins - 1);
+          winner.matchesPlayed = Math.max(0, winner.matchesPlayed - 1);
+        }
+
+        if (loser) {
+          loser.losses = Math.max(0, loser.losses - 1);
+          loser.matchesPlayed = Math.max(0, loser.matchesPlayed - 1);
+        }
+      }
+
+      function deleteMatch(matchId) {
+        if (!confirm("確定要刪除這場比賽紀錄嗎？這將會還原球員勝分數據。")) return;
+
+        const match = matches.find((m) => m.id === matchId);
+        if (match) {
+          revertMatchStats(match);
+          matches = matches.filter((m) => m.id !== matchId);
+          saveData();
+        }
+      }
+
+      function startEditMatch(matchId) {
+        editingMatchId = matchId;
+        renderAll();
+      }
+
+      function cancelEditMatch() {
+        editingMatchId = null;
+        renderAll();
+      }
+
+      function saveMatchEdit(matchId) {
+        const match = matches.find((m) => m.id === matchId);
+        if (!match) return;
+
+        const pAId = document.getElementById(`edit-player-a-${matchId}`).value;
+        const pBId = document.getElementById(`edit-player-b-${matchId}`).value;
+        const sA = parseInt(document.getElementById(`edit-score-a-${matchId}`).value) || 0;
+        const sB = parseInt(document.getElementById(`edit-score-b-${matchId}`).value) || 0;
+
+        if (pAId === pBId) {
+          alert("不能選擇相同的球員！");
+          return;
+        }
+
+        // Revert old stats
+        revertMatchStats(match);
+
+        // Update match object
+        match.playerAId = pAId;
+        match.playerBId = pBId;
+        match.playerAName = players.find(p => p.id === pAId).name;
+        match.playerBName = players.find(p => p.id === pBId).name;
+        match.scoreA = sA;
+        match.scoreB = sB;
+        match.winnerId = sA > sB ? pAId : (sB > sA ? pBId : pAId); // Default to A if tie (should ideally prompt)
+
+        // Apply new stats
+        applyMatchStats(match);
+
+        editingMatchId = null;
+        saveData();
+      }
+
+      function renderMatchArrangement() {
+        const step1List = document.getElementById("select-player-a-list");
+        const step2List = document.getElementById("select-player-b-list");
+
+        // Step 1: Select Player A
+        const busyPlayerIds = matches
+          .filter((m) => m.status === "Arranged" || m.status === "Playing")
+          .flatMap((m) => [m.playerAId, m.playerBId]);
+
+        const availableForA = players.filter(
+          (p) => p.status === "已到" && !busyPlayerIds.includes(p.id),
+        );
+
+        availableForA.sort((a, b) => {
+          const restA = getRestTime(a);
+          const restB = getRestTime(b);
+          if (restA !== restB) return restB - restA;
+          return a.matchesPlayed - b.matchesPlayed;
+        });
+
+        if (availableForA.length === 0) {
+          step1List.innerHTML =
+            '<p style="color: var(--text-dim); text-align: center; padding: 1rem;">暫無可安排比賽的球員 (所有人皆在比賽中或未到)。</p>';
+        } else {
+          step1List.innerHTML = availableForA
+            .map(
+              (p) => `
+                    <div class="player-item">
+                        <div>
+                            <div style="font-weight: 600;">${p.name}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-dim);">${p.wins} 勝 ${p.losses} 敗 · ${formatRestTime(getRestTime(p))}</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="selectPlayerA('${p.id}')">選擇</button>
+                    </div>
+                `,
+            )
+            .join("");
+        }
+
+        // Step 2: Select Player B (Opponent)
+        if (currentPlayerA) {
+          const opponents = players.filter(
+            (p) =>
+              p.id !== currentPlayerA.id &&
+              p.status === "已到" &&
+              !busyPlayerIds.includes(p.id) &&
+              !matches.some(m => 
+                m.status === 'Finished' && 
+                ((m.playerAId === currentPlayerA.id && m.playerBId === p.id) || 
+                 (m.playerAId === p.id && m.playerBId === currentPlayerA.id))
+              )
+          );
+
+          // Sorting priorities:
+          // 1. Fewer total matches
+          // 2. More rest time
+          // 3. Fewer wins
+          opponents.sort((a, b) => {
+            if (a.matchesPlayed !== b.matchesPlayed)
+              return a.matchesPlayed - b.matchesPlayed;
+
+            const restA = getRestTime(a);
+            const restB = getRestTime(b);
+            if (restA !== restB) return restB - restA;
+
+            return a.wins - b.wins;
+          });
+
+          if (opponents.length === 0) {
+            step2List.innerHTML =
+              '<p style="color: var(--text-dim); text-align: center; padding: 1rem;">目前沒有可勾選的對手 (可能皆已對戰過或在比賽中)。</p>';
+          } else {
+            step2List.innerHTML = opponents
+              .map(
+                (p, index) => `
+                        <div class="player-item" style="${index === 0 ? "border-left: 3px solid var(--accent); padding-left: 10px;" : ""}">
+                            <div>
+                                <div style="font-weight: 600;">${p.name} ${index === 0 ? '<span style="color: var(--accent); font-size: 0.7rem; vertical-align: middle;">★ 推薦對手</span>' : ""}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-dim);">${p.wins} 勝 ${p.losses} 敗 · ${formatRestTime(getRestTime(p))}</div>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="createMatch('${p.id}')">安排</button>
+                        </div>
+                    `,
+              )
+              .join("");
+          }
+        }
+      }
+
+      function renderLiveMatches() {
+        const container = document.getElementById("live-matches-list");
+        const liveMatches = matches.filter((m) => m.status !== "Finished");
+
+        if (liveMatches.length === 0) {
+          container.innerHTML =
+            '<p style="color: var(--text-dim); text-align: center; padding: 2rem;">目前沒有比賽。</p>';
+          return;
+        }
+
+        container.innerHTML = liveMatches
+          .map(
+            (m) => `
+                <div class="card match-card ${m.status.toLowerCase()}">
+                    <div class="flex-between">
+                        <div style="font-weight: 700; font-size: 1.1rem;">
+                            ${m.playerAName} <span style="color: var(--text-dim); font-weight: 400;">vs</span> ${m.playerBName}
+                        </div>
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--warning);">${m.status === "Arranged" ? "延後" : "進行中"}</span>
+                    </div>
+                    
+                    ${
+                      m.status === "Playing"
+                        ? `
+                        <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem; align-items: center;">
+                            <input type="number" id="score-a-${m.id}" placeholder="${m.playerAName}" style="margin-bottom: 0; text-align: center;">
+                            <span style="color: var(--text-dim);">:</span>
+                            <input type="number" id="score-b-${m.id}" placeholder="${m.playerBName}" style="margin-bottom: 0; text-align: center;">
+                        </div>
+                    `
+                        : `<div id="score-a-${m.id}" class="hidden"></div><div id="score-b-${m.id}" class="hidden"></div>`
+                    }
+
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        ${
+                          m.status === "Arranged"
+                            ? `
+                            <button class="btn btn-primary" onclick="updateMatchStatus('${m.id}', 'Playing')">開始比賽</button>
+                        `
+                            : `
+                            <button class="btn btn-secondary btn-sm" style="flex: 1; background: rgba(16, 185, 129, 0.2); color: var(--accent);" onclick="finishMatch('${m.id}', '${m.playerAId}')">${m.playerAName} 勝</button>
+                            <button class="btn btn-secondary btn-sm" style="flex: 1; background: rgba(16, 185, 129, 0.2); color: var(--accent);" onclick="finishMatch('${m.id}', '${m.playerBId}')">${m.playerBName} 勝</button>
+                        `
+                        }
+                    </div>
+                    ${m.status === "Arranged" ? `<button class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0.5rem; opacity: 0.6;" onclick="cancelMatch('${m.id}')">取消</button>` : ""}
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      function renderHistory() {
+        const container = document.getElementById("match-history-list");
+        const history = matches
+          .filter((m) => m.status === "Finished")
+          .sort((a, b) => b.finishedTime - a.finishedTime);
+
+        if (history.length === 0) {
+          container.innerHTML =
+            '<p style="color: var(--text-dim); text-align: center; padding: 2rem;">目前尚未有歷史紀錄。</p>';
+          return;
+        }
+
+        container.innerHTML = history
+          .slice(0, 15)
+          .map((m) => {
+            if (m.id === editingMatchId) {
+              const playerOptions = players
+                .map(p => `<option value="${p.id}" ${p.id === m.playerAId ? 'selected' : ''}>${p.name}</option>`)
+                .join("");
+              const playerBOptions = players
+                .map(p => `<option value="${p.id}" ${p.id === m.playerBId ? 'selected' : ''}>${p.name}</option>`)
+                .join("");
+
+              return `
+                <div class="card match-card editing" style="border: 1px solid var(--accent);">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-size: 0.75rem; color: var(--text-dim);">球員 A</label>
+                        <select id="edit-player-a-${m.id}" style="width: 100%; margin-bottom: 0.5rem;">${playerOptions}</select>
+                        <label style="font-size: 0.75rem; color: var(--text-dim);">球員 B</label>
+                        <select id="edit-player-b-${m.id}" style="width: 100%;">${playerBOptions}</select>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+                        <input type="number" id="edit-score-a-${m.id}" value="${m.scoreA}" style="margin-bottom: 0; text-align: center;">
+                        <span style="color: var(--text-dim);">:</span>
+                        <input type="number" id="edit-score-b-${m.id}" value="${m.scoreB}" style="margin-bottom: 0; text-align: center;">
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="saveMatchEdit('${m.id}')">儲存</button>
+                        <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="cancelEditMatch()">取消</button>
+                    </div>
+                </div>
+              `;
+            }
+
+            const winnerName =
+              m.winnerId === m.playerAId ? m.playerAName : m.playerBName;
+            const time = new Date(m.finishedTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const hasScores = m.scoreA !== undefined && m.scoreB !== undefined;
+
+            return `
+                    <div class="card match-card finished">
+                        <div class="flex-between">
+                            <div>
+                                <div style="font-weight: 600;">${m.playerAName} vs ${m.playerBName}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-dim); margin-top: 0.25rem;">
+                                    ${hasScores ? `${m.scoreA} – ${m.scoreB}` : "未記錄比分"}
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem;">${time}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">勝者</div>
+                                <div style="color: var(--accent); font-weight: 700;">${winnerName}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: flex-end; opacity: 0.6;">
+                            <button class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="startEditMatch('${m.id}')">編輯</button>
+                            <button class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.7rem; color: #ef4444;" onclick="deleteMatch('${m.id}')">刪除</button>
+                        </div>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      // --- Bonus Functions ---
+      function confirmResetData() {
+        if (
+          confirm(
+            "確定要刪除所有球員與比賽數據嗎？此動作無法復原。",
+          )
+        ) {
+          localStorage.removeItem("badminton_players");
+          localStorage.removeItem("badminton_matches");
+          location.reload();
+        }
+      }
+
+      function exportData() {
+        const data = { players, matches };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `羽球數據_${new Date().toISOString().split("T")[0]}.json`;
+        a.click();
+      }
+
+      function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (data.players && data.matches) {
+              players = data.players;
+              matches = data.matches;
+              saveData();
+              alert("數據匯入成功！");
+            }
+          } catch (err) {
+            alert("無效的 JSON 檔案。");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderAll();
+      });
+    </script>
+  </body>
+</html>
